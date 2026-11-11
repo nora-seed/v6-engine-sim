@@ -29,6 +29,8 @@ const tempBadge = document.getElementById('tempBadge')!;
 const afrBadge = document.getElementById('afrBadge')!;
 const knockBadge = document.getElementById('knockBadge')!;
 const gearBadge = document.getElementById('gearBadge')!;
+const btnStart = document.getElementById('btnStart') as HTMLButtonElement | null;
+const btnStop = document.getElementById('btnStop') as HTMLButtonElement | null;
 
 const chartsHTML = `
   <div id="chartsContainer" style="position:fixed;bottom:0;left:0;right:0;height:220px;background:#0d1b2a;border-top:1px solid #1e3a5f;display:flex;gap:8px;padding:8px;z-index:5;box-shadow:0 -4px 24px #00000080">
@@ -57,6 +59,8 @@ async function init(): Promise<void> {
   sound.setMasterVolume(store.soundEnabled ? 0.35 : 0);
 
   createPanels(sound);
+
+  setupEngineControls();
 
   initCharts();
 
@@ -97,6 +101,14 @@ function animate(time: number): void {
 
     const omega = store.rpm * 2 * Math.PI / 60;
     crankAngle = (crankAngle + omega * dt) % (Math.PI * 4);
+  } else {
+    // Durdurulunca motor yavaşça sıfıra insin
+    store.rpm = Math.max(0, store.rpm - dt * 2500);
+    store.params.rpm = store.rpm;
+    if (store.rpm > 0) {
+      const omega = store.rpm * 2 * Math.PI / 60;
+      crankAngle = (crankAngle + omega * dt) % (Math.PI * 4);
+    }
   }
 
   scene.update(crankAngle, store.params.vvtIntake, store.params.vvtExhaust, store.params.ignitionAdvance);
@@ -108,6 +120,7 @@ function animate(time: number): void {
   sound.update(dt);
 
   updateHUD();
+  updateEngineControls();
 
   controls.update();
   renderer.render(scene.scene, scene.camera);
@@ -134,6 +147,31 @@ function getGear(rpm: number): string {
   if (rpm < 6500) return '3';
   if (rpm < 8000) return '4';
   return '5';
+}
+
+function setupEngineControls(): void {
+  btnStart?.addEventListener('click', () => startEngine());
+  btnStop?.addEventListener('click', () => stopEngine());
+  updateEngineControls();
+}
+
+function startEngine(): void {
+  sound.resume();
+  store.isRunning = true;
+  if (store.rpm < 200) store.rpm = 200;
+}
+
+function stopEngine(): void {
+  store.isRunning = false;
+}
+
+function updateEngineControls(): void {
+  if (!btnStart || !btnStop) return;
+  const running = store.isRunning;
+  btnStart.classList.toggle('active', running);
+  btnStop.classList.toggle('active', !running);
+  btnStart.disabled = running;
+  btnStop.disabled = !running;
 }
 
 function handleWorkerResult(e: MessageEvent): void {

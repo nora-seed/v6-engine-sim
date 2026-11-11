@@ -33,6 +33,14 @@
     .panel-toggle:hover,.panel-toggle:focus{border-color:var(--accent);outline:none}
     .panel-toggle svg{width:24px;height:24px;stroke:var(--fg);transition:stroke .2s}
     .panel-toggle:hover svg{stroke:var(--accent)}
+    .engine-controls{position:fixed;left:16px;top:calc(env(safe-area-inset-top,12px) + 56px);z-index:20;display:flex;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:6px;box-shadow:0 4px 16px #00000050;backdrop-filter:blur(8px);touch-action:manipulation}
+    .ctrl-btn{display:flex;align-items:center;gap:6px;border:1px solid var(--border);background:transparent;color:var(--fg);border-radius:7px;padding:8px 14px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s,color .15s,opacity .15s;touch-action:manipulation}
+    .ctrl-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+    .ctrl-btn:active:not(:disabled){transform:scale(.97)}
+    .ctrl-btn.start{border-color:var(--accent);color:var(--accent)}
+    .ctrl-btn.start.active{background:var(--accent);color:var(--bg)}
+    .ctrl-btn.stop.active{background:var(--danger);border-color:var(--danger);color:#fff}
+    .ctrl-btn:disabled{opacity:.35;cursor:not-allowed}
     .install-btn{position:fixed;left:16px;bottom:calc(env(safe-area-inset-bottom,12px) + 80px);z-index:20;background:var(--accent);color:var(--bg);border:none;border-radius:10px;padding:10px 16px;font-weight:600;font-size:14px;cursor:pointer;box-shadow:0 4px 16px #00d4aa60;display:none;touch-action:manipulation}
     .install-btn.show{display:block;animation:slideUp .3s ease}
     @keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
@@ -68,6 +76,10 @@
         <div class="badge warn" id="knockBadge">Knock: --%</div>
         <div class="badge" id="gearBadge">Gear: N</div>
       </div>
+    </div>
+    <div class="engine-controls" id="engineControls">
+      <button class="ctrl-btn start" id="btnStart" title="Motoru başlat (P)">▶ Başlat</button>
+      <button class="ctrl-btn stop" id="btnStop" title="Motoru durdur (P)">■ Durdur</button>
     </div>
     <button class="panel-toggle" id="panelToggle" aria-label="Toggle parameters panel" title="Parameters (P)">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
