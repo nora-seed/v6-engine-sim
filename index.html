@@ -8,7 +8,6 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="V6Sim">
-  <link rel="manifest" href="/v6-engine-sim/manifest.json">
   <link rel="icon" type="image/svg+xml" href="/v6-engine-sim/favicon.svg">
   <link rel="apple-touch-icon" href="/v6-engine-sim/icons/icon-192.png">
   <link rel="mask-icon" href="/v6-engine-sim/favicon.svg" color="#0d1b2a">
@@ -76,13 +75,8 @@
     <button class="install-btn" id="installBtn">Install App</button>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
   </div>
-  <script type="module" src="/v6-engine-sim/src/main.ts"></script>
+  <script type="module" src="/src/main.ts"></script>
   <script>
-    if('serviceWorker' in navigator){
-      navigator.serviceWorker.register('/v6-engine-sim/sw.js',{scope:'/v6-engine-sim/'})
-        .then(r=>console.log('[SW] Registered:',r.scope))
-        .catch(e=>console.warn('[SW] Failed:',e));
-    }
     let deferredPrompt=null;
     window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;document.getElementById('installBtn').classList.add('show')});
     document.getElementById('installBtn').addEventListener('click',async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();const{outcome}=await deferredPrompt.userChoice;if(outcome==='accepted'){deferredPrompt=null;document.getElementById('installBtn').classList.remove('show')}});

@@ -84,7 +84,9 @@ if (saved) {
     const parsed = JSON.parse(saved);
     Object.assign(store.params.geometry, parsed.geometry);
     Object.assign(store.params.ambient, parsed.ambient);
-    Object.assign(store.params.forcedInduction, parsed.forcedInduction);
+    if (store.params.forcedInduction && parsed.forcedInduction) {
+      Object.assign(store.params.forcedInduction, parsed.forcedInduction);
+    }
     store.params.ignitionAdvance = parsed.ignitionAdvance ?? 12;
     store.params.afrTarget = parsed.afrTarget ?? 1.0;
     store.params.octane = parsed.octane ?? 98;
@@ -99,7 +101,7 @@ subscribe(store, () => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     geometry: snapshot(store.params.geometry),
     ambient: snapshot(store.params.ambient),
-    forcedInduction: snapshot(store.params.forcedInduction),
+    forcedInduction: store.params.forcedInduction ? snapshot(store.params.forcedInduction) : null,
     ignitionAdvance: store.params.ignitionAdvance,
     afrTarget: store.params.afrTarget,
     octane: store.params.octane,

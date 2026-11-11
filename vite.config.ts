@@ -17,7 +17,7 @@ export default defineConfig({
       }
     }
   },
-  worker: { format: 'es', plugins: [] },
+  worker: { format: 'es', plugins: () => [] },
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',
@@ -50,6 +50,7 @@ export default defineConfig({
         ]
       },
       workbox: {
+        mode: 'development',
         navigateFallback: '/v6-engine-sim/index.html',
         cleanupOutdatedCaches: true,
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,

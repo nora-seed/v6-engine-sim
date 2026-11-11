@@ -21,7 +21,6 @@ export function createRenderer(canvas: HTMLCanvasElement): THREE.WebGLRenderer {
   renderer.toneMappingExposure = 1.1;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.physicallyCorrectLights = true;
 
   canvas.addEventListener('webglcontextlost', e => {
     e.preventDefault();
@@ -49,7 +48,7 @@ export function setupSafariFixes(renderer: THREE.WebGLRenderer): void {
   }
 }
 
-export function resizeRenderer(renderer: THREE.WebGLRenderer, camera: THREE.Camera, width: number, height: number): void {
+export function resizeRenderer(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, width: number, height: number): void {
   const dpr = Math.min(window.devicePixelRatio, 2);
   renderer.setPixelRatio(dpr);
   renderer.setSize(width, height, false);

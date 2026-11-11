@@ -1,4 +1,4 @@
-import GUI from 'dat.gui';
+import { GUI } from 'dat.gui';
 import { store, PARAM_BOUNDS, updateDisplacement } from './store';
 import { EngineSound } from '../engine/sound';
 
@@ -77,12 +77,12 @@ export function createPanels(engineSound: EngineSound): GUI {
 
   const visFolder = gui.addFolder('🎨 Visual');
   visFolder.add(store, 'showPV').name('Show PV Diagram');
-  visFolder.add(store, 'showWireframe').name('Wireframe').onChange(v => setWireframe(v));
-  visFolder.add(store, 'showXRay').name('X-Ray').onChange(v => setXRay(v));
+  visFolder.add(store, 'showWireframe').name('Wireframe').onChange((v: boolean) => setWireframe(v));
+  visFolder.add(store, 'showXRay').name('X-Ray').onChange((v: boolean) => setXRay(v));
   visFolder.add(store, 'units', ['metric', 'imperial']).name('Units');
   visFolder.add(store, 'theme', ['dark', 'light']).name('Theme').onChange(applyTheme);
   visFolder.add(store, 'language', ['en', 'tr']).name('Language');
-  visFolder.add(store, 'soundEnabled').name('Sound').onChange(v => { sound?.setMasterVolume(v ? 0.35 : 0); });
+  visFolder.add(store, 'soundEnabled').name('Sound').onChange((v: boolean) => { sound?.setMasterVolume(v ? 0.35 : 0); });
   visFolder.open();
 
   window.addEventListener('keydown', e => {
@@ -128,13 +128,13 @@ function applyTheme(theme: 'dark' | 'light'): void {
 }
 
 async function runDynoSweep(): Promise<void> {
-  const btn = gui.__controllers.find(c => c.property === 'runSweep')?.__li.querySelector('button');
+  const btn = (gui.__controllers.find((c: any) => c.property === 'runSweep') as any)?.__li?.querySelector('button');
   if (btn) { btn.textContent = '⏳ Running...'; btn.disabled = true; }
 
-  const rpmPoints = [];
+  const rpmPoints: number[] = [];
   for (let r = 1000; r <= 8000; r += 250) rpmPoints.push(r);
 
-  store.params.rpm = rpmPoints;
+  store.params.rpm = rpmPoints[0];
   window.dispatchEvent(new CustomEvent('v6sim:dyno-sweep', { detail: rpmPoints }));
 
   setTimeout(() => {

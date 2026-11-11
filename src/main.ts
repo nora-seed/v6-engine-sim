@@ -118,8 +118,8 @@ function animate(time: number): void {
 function updateHUD(): void {
   const s = store.results.get(Math.round(store.rpm / 250) * 250);
   rpmBadge.textContent = `RPM: ${Math.round(store.rpm).toLocaleString()}`;
-  powerBadge.textContent = `Power: ${store.units === 'imperial' ? (s?.power * 1.34102 ?? 0).toFixed(1) + ' hp' : (s?.power ?? 0).toFixed(1) + ' kW'}`;
-  torqueBadge.textContent = `Torque: ${store.units === 'imperial' ? (s?.torque * 0.73756 ?? 0).toFixed(1) + ' lb-ft' : (s?.torque ?? 0).toFixed(1) + ' Nm'}`;
+  powerBadge.textContent = `Power: ${store.units === 'imperial' ? ((s?.power ?? 0) * 1.34102).toFixed(1) + ' hp' : (s?.power ?? 0).toFixed(1) + ' kW'}`;
+  torqueBadge.textContent = `Torque: ${store.units === 'imperial' ? ((s?.torque ?? 0) * 0.73756).toFixed(1) + ' lb-ft' : (s?.torque ?? 0).toFixed(1) + ' Nm'}`;
   boostBadge.textContent = `Boost: ${(s?.boost ?? 0).toFixed(2)} bar`;
   tempBadge.textContent = `ECT: ${s ? Math.round(90 + s.egt * 0.3) : '--'}°C`;
   afrBadge.textContent = `AFR: ${s ? (14.7 * s.lambda).toFixed(1) : '--.-'}`;
