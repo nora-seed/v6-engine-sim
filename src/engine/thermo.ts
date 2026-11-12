@@ -23,7 +23,7 @@ function solveSingleRPM(params: EngineParams, rpm: number): ThermoState {
   const { bore, stroke, rodLength, compressionRatio, displacement } = geometry;
 
   const T_amb = ambient.temperature + 273.15;
-  const P_amb = ambient.pressure * 100;
+  const P_amb = ambient.pressure * 1000;
   const rho_amb = P_amb / (287.058 * T_amb * (1 + 0.608 * ambient.humidity));
 
   const ve_base = 0.85 + 0.1 * Math.sin((rpm - 1000) / 4000 * Math.PI);
@@ -46,113 +46,81 @@ function solveSingleRPM(params: EngineParams, rpm: number): ThermoState {
   ve = Math.min(1.15, Math.max(0.15, ve));
 
   const V_d = displacement * 1e-6;
-  const m_air = P_manifold * V_d * ve / (287.058 * T_manifold);
-  const m_fuel = m_air / (STOICH_AFR * afrTarget);
-  const Q_in = m_fuel * LHV_GASOLINE * 0.98;
+  const V_s = V_d / geometry.cylinders;
+  const V_c = V_s / (compressionRatio - 1);
+  const V_1 = V_c + V_s;
 
-  const V_c = V_d / (compressionRatio - 1);
-  const V_s = V_d / 6;
-  const P_ivc = P_manifold * 0.95;
   const T_ivc = T_manifold * 1.05;
+  const P_ivc = P_manifold * 0.95;
+
+  const m_air_cyl = (P_manifold * V_s * ve) / (287.058 * T_manifold);
+  const m_fuel_cyl = m_air_cyl / (STOICH_AFR * afrTarget);
+  const Q_in_cyl = m_fuel_cyl * LHV_GASOLINE * 0.98;
 
   const n_comp = 1.32;
-  const P_tdc = P_ivc * Math.pow(compressionRatio, n_comp);
-  const T_tdc = T_ivc * Math.pow(compressionRatio, n_comp - 1);
+  const n_exp = 1.3;
+  const T2 = T_ivc * Math.pow(compressionRatio, n_comp - 1);
+  const P2 = P_ivc * Math.pow(compressionRatio, n_comp);
 
-  const burn_duration = 40 * Math.PI / 180;
-  const burn_start = -ignitionAdvance * Math.PI / 180;
-  const m = 2.5;
-  const a = 5;
+  const Cv_eff = 950;
+  const combustionEff = 0.75;
+  const T3 = T2 + (Q_in_cyl * combustionEff) / (m_air_cyl * Cv_eff);
+  const P3 = P2 * (T3 / T2);
+  const T4 = T3 * Math.pow(1 / compressionRatio, n_exp - 1);
+
+  const work_net_cyl = Math.max(0, m_air_cyl * Cv_eff * ((T3 - T2) - (T4 - T_ivc)));
+
+  const cycles_per_sec = rpm / 120;
+  const omega = (rpm * 2 * Math.PI) / 60;
+  const power_indicated = work_net_cyl * geometry.cylinders * cycles_per_sec;
+
+  const maxP = Math.max(P2, P3);
+  const fmep_bar = 0.5 + 0.1 * (rpm / 1000) + 0.03 * Math.pow(rpm / 1000, 2) + 0.01 * (maxP / 1e5);
+  const friction_power = fmep_bar * 1e5 * V_d * cycles_per_sec;
+  const brake_power = Math.max(0, power_indicated - friction_power);
+  const brake_torque = brake_power / Math.max(1, omega);
+
+  const fuel_flow_kg_s = m_fuel_cyl * geometry.cylinders * cycles_per_sec;
+  const bsfc = brake_power > 0 ? (fuel_flow_kg_s * 3.6e6) / (brake_power / 1000) : 0;
+
+  const egt_c = Math.max(0, T4 - 273.15) * 0.72;
+
+  const knock_limit = 10 + 0.5 * (octane - 95) - 0.1 * (maxP / 1e5 - 80) - 0.05 * (rpm / 1000);
+  const knock_margin = knock_limit - ignitionAdvance;
+
+  const lambda = afrTarget;
 
   const pvDiagram: PVPoint[] = [];
   const n_points = 720;
-  let maxP = 0;
-  let work_cycle = 0;
-  let Q_released = 0;
-
   const cylinderPressures: number[][] = [[], [], [], [], [], []];
 
   for (let i = 0; i < n_points; i++) {
     const theta = (i / n_points) * 4 * Math.PI;
     const V = cylinderVolume(theta, V_c, V_s, rodLength, stroke);
+    const VcClamped = Math.max(V, V_c);
 
-    const stroke_phase = Math.floor(theta / Math.PI);
-
-    let P, T;
-
-    if (stroke_phase === 0) {
-      P = P_manifold * 0.98;
-      T = T_manifold;
-    } else if (stroke_phase === 1) {
-      const comp_ratio_inst = (V_c + V_s) / V;
-      P = P_ivc * Math.pow(comp_ratio_inst, n_comp);
-      T = T_ivc * Math.pow(comp_ratio_inst, n_comp - 1);
-    } else if (stroke_phase === 2) {
-      const theta_burn = theta - Math.PI - burn_start;
-      let x_b = 0;
-      if (theta_burn > 0 && theta_burn < burn_duration) {
-        x_b = 1 - Math.exp(-a * Math.pow(theta_burn / burn_duration, m + 1));
-      } else if (theta_burn >= burn_duration) {
-        x_b = 1;
-      }
-      const dQ = Q_in * x_b - Q_released;
-      Q_released = Q_in * x_b;
-
-      const gamma = GAMMA_AIR * (1 - x_b) + GAMMA_BURN * x_b;
-      if (i === 180) {
-        P = P_tdc;
-        T = T_tdc;
-      } else {
-        const V_prev = cylinderVolume(theta - 4 * Math.PI / n_points, V_c, V_s, rodLength, stroke);
-        const n_poly = gamma;
-        P = P_tdc * Math.pow((V_c + V_s) / V, n_poly) + dQ / (V - V_prev) * 0.5;
-        T = P * V / (m_air / 6 * 287.058);
-      }
+    let P: number;
+    if (theta < Math.PI) {
+      P = P_ivc;
+    } else if (theta < 2 * Math.PI) {
+      P = P_ivc * Math.pow(V_1 / VcClamped, n_comp);
+    } else if (theta < 3 * Math.PI) {
+      P = P3 * Math.pow(V_c / VcClamped, n_exp);
     } else {
       P = P_amb * 1.05;
-      T = T_amb * 1.3;
     }
 
-    maxP = Math.max(maxP, P);
-    pvDiagram.push({ v: V * 1000, p: P / 1e5, q: Q_released });
-
-    for (let c = 0; c < 6; c++) {
-      cylinderPressures[c].push(P / 1e5);
-    }
-
-    if (i > 0) {
-      const V_prev = pvDiagram[i - 1].v / 1000;
-      work_cycle += (P + pvDiagram[i - 1].p * 1e5) / 2 * (V - V_prev);
-    }
+    pvDiagram.push({ v: V * 1000, p: P / 1e5, q: 0 });
+    for (let c = 0; c < geometry.cylinders; c++) cylinderPressures[c].push(P / 1e5);
   }
 
-  const work_net = work_cycle * 6;
-  const cycles_per_sec = rpm / 120;
-  const power_W = work_net * cycles_per_sec;
-  const torque_Nm = power_W / (rpm * 2 * Math.PI / 60);
-
-  const fmep = 0.3 + 0.005 * rpm + 0.00002 * rpm * rpm + 0.05 * maxP / 1e5;
-  const friction_power = fmep * 1e5 * V_d * cycles_per_sec;
-  const brake_power = power_W - friction_power;
-  const brake_torque = brake_power / (rpm * 2 * Math.PI / 60);
-
-  const fuel_flow_kg_s = m_fuel * cycles_per_sec * 6;
-  const bsfc = fuel_flow_kg_s > 0 ? (fuel_flow_kg_s * 3.6e6) / brake_power : 0;
-
-  const T_exh = T_tdc * Math.pow(compressionRatio, 1 - GAMMA_BURN) * 0.85 + 200;
-  const egt_c = T_exh - 273.15;
-
-  const knock_limit = 10 + 0.5 * (octane - 95) - 0.1 * (maxP / 1e5 - 80) - 0.05 * (rpm / 1000);
-  const actual_advance = ignitionAdvance;
-  const knock_margin = knock_limit - actual_advance;
-
-  const lambda = afrTarget;
+  void injectionTiming;
 
   return {
     rpm,
     torque: brake_torque,
     power: brake_power / 1000,
-    bmep: brake_torque * 2 * Math.PI / V_d / 1e5,
+    bmep: (brake_torque * 4 * Math.PI) / V_d / 1e5,
     bsfc,
     egt: egt_c,
     boost: boost_gauge,
@@ -179,7 +147,7 @@ interface TurboResult {
 
 function solveTurbo(params: EngineParams, rpm: number, ve: number, rho_amb: number): TurboResult {
   const { forcedInduction, geometry, throttle } = params;
-  if (!forcedInduction) return { boost_gauge: 0, P_manifold: params.ambient.pressure * 100, T_manifold: params.ambient.temperature + 273.15, ve_multiplier: 1 };
+  if (!forcedInduction) return { boost_gauge: 0, P_manifold: params.ambient.pressure * 1000, T_manifold: params.ambient.temperature + 273.15, ve_multiplier: 1 };
 
   const { compressorTrim, compressorAR, turbineAR, wastegateSpring, intercoolerEff, boostTarget } = forcedInduction;
   const V_d = geometry.displacement * 1e-6;
@@ -209,7 +177,7 @@ function solveTurbo(params: EngineParams, rpm: number, ve: number, rho_amb: numb
 
   return {
     boost_gauge,
-    P_manifold: PR * params.ambient.pressure * 100,
+    P_manifold: PR * params.ambient.pressure * 1000,
     T_manifold,
     ve_multiplier: ve_mult
   };

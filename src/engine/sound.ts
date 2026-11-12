@@ -177,6 +177,36 @@ export class EngineSound {
     }
   }
 
+  click(volume = 0.5): void {
+    if (this.ctx.state !== 'running') return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(85 + Math.random() * 45, now);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, volume * 0.12), now + 0.002);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.055);
+    osc.connect(gain).connect(this.masterGain);
+    osc.start(now);
+    osc.stop(now + 0.06);
+  }
+
+  beep(freq = 440, duration = 0.12, volume = 0.18): void {
+    if (this.ctx.state !== 'running') return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, now);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, volume), now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    osc.connect(gain).connect(this.masterGain);
+    osc.start(now);
+    osc.stop(now + duration + 0.02);
+  }
+
   resume(): void {
     if (this.ctx.state === 'suspended') this.ctx.resume();
     this.isPlaying = true;

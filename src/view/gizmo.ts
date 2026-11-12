@@ -9,11 +9,13 @@ export function createControls(camera: THREE.Camera, canvas: HTMLCanvasElement):
   controls.panSpeed = 0.8;
   controls.rotateSpeed = 0.7;
   controls.zoomSpeed = 1.0;
-  controls.minDistance = 150;
-  controls.maxDistance = 2000;
-  controls.maxPolarAngle = Math.PI * 0.95;
+  controls.minDistance = 2.5;
+  controls.maxDistance = 16;
+  controls.maxPolarAngle = Math.PI * 0.85;
   controls.minPolarAngle = 0.05;
-  controls.target.set(0, 50, 0);
+  controls.target.set(0, 0.4, 0);
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 0.4;
 
   canvas.style.touchAction = 'none';
   canvas.addEventListener('touchstart', e => {

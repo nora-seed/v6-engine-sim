@@ -23,8 +23,8 @@ export function initCharts(): void {
       },
       scales: {
         x: { type: 'linear', position: 'bottom', title: { display: true, text: 'RPM', color: '#7b8ca6' }, grid: { color: '#1e3a5f' }, ticks: { color: '#7b8ca6' } },
-        y: { type: 'linear', position: 'left', title: { display: true, text: 'Torque (Nm) / Power (kW)', color: '#7b8ca6' }, grid: { color: '#1e3a5f' }, ticks: { color: '#7b8ca6' } },
-        y1: { type: 'linear', position: 'right', title: { display: true, text: 'BSFC (g/kWh)', color: '#ffb700' }, grid: { drawOnChartArea: false }, ticks: { color: '#ffb700' } }
+        y: { type: 'linear', position: 'left', title: { display: true, text: 'Tork (Nm) / Güç (kW)', color: '#7b8ca6' }, grid: { color: '#1e3a5f' }, ticks: { color: '#7b8ca6' } },
+        y1: { type: 'linear', position: 'right', title: { display: true, text: 'Özgül Yakıt (g/kWh)', color: '#ffb700' }, grid: { drawOnChartArea: false }, ticks: { color: '#ffb700' } }
       },
       animation: { duration: 300 }
     }
@@ -38,8 +38,8 @@ export function initCharts(): void {
       maintainAspectRatio: false,
       plugins: { legend: { display: false }, tooltip: { enabled: false } },
       scales: {
-        x: { type: 'linear', title: { display: true, text: 'Volume (L)', color: '#7b8ca6' }, grid: { color: '#1e3a5f' }, ticks: { color: '#7b8ca6' } },
-        y: { type: 'linear', title: { display: true, text: 'Pressure (bar)', color: '#7b8ca6' }, grid: { color: '#1e3a5f' }, ticks: { color: '#7b8ca6' } }
+        x: { type: 'linear', title: { display: true, text: 'Hacim (L)', color: '#7b8ca6' }, grid: { color: '#1e3a5f' }, ticks: { color: '#7b8ca6' } },
+        y: { type: 'linear', title: { display: true, text: 'Basınç (bar)', color: '#7b8ca6' }, grid: { color: '#1e3a5f' }, ticks: { color: '#7b8ca6' } }
       },
       animation: { duration: 0 }
     }
@@ -59,10 +59,10 @@ export function updateDynoChart(results: Map<number, any>): void {
   const ve = rpm.map(r => results.get(r)!.volumetricEff * 100);
 
   dynoChart.data.datasets = [
-    { label: 'Torque (Nm)', data: rpm.map((r, i) => ({ x: r, y: torque[i] })), borderColor: '#00d4aa', backgroundColor: '#00d4aa33', yAxisID: 'y', tension: 0.3, fill: true },
-    { label: 'Power (kW)', data: rpm.map((r, i) => ({ x: r, y: power[i] })), borderColor: '#0066ff', backgroundColor: '#0066ff33', yAxisID: 'y', tension: 0.3, fill: true },
-    { label: 'BSFC (g/kWh)', data: rpm.map((r, i) => ({ x: r, y: bsfc[i] })), borderColor: '#ffb700', backgroundColor: '#ffb70033', yAxisID: 'y1', tension: 0.3, borderDash: [5, 5] },
-    { label: 'Boost (bar)', data: rpm.map((r, i) => ({ x: r, y: boost[i] })), borderColor: '#ff4757', backgroundColor: '#ff475733', yAxisID: 'y1', tension: 0.3, borderDash: [2, 4] }
+    { label: 'Tork (Nm)', data: rpm.map((r, i) => ({ x: r, y: torque[i] })), borderColor: '#00d4aa', backgroundColor: '#00d4aa33', yAxisID: 'y', tension: 0.3, fill: true },
+    { label: 'Güç (kW)', data: rpm.map((r, i) => ({ x: r, y: power[i] })), borderColor: '#0066ff', backgroundColor: '#0066ff33', yAxisID: 'y', tension: 0.3, fill: true },
+    { label: 'Özgül Yakıt (g/kWh)', data: rpm.map((r, i) => ({ x: r, y: bsfc[i] })), borderColor: '#ffb700', backgroundColor: '#ffb70033', yAxisID: 'y1', tension: 0.3, borderDash: [5, 5] },
+    { label: 'Turbo (bar)', data: rpm.map((r, i) => ({ x: r, y: boost[i] })), borderColor: '#ff4757', backgroundColor: '#ff475733', yAxisID: 'y1', tension: 0.3, borderDash: [2, 4] }
   ];
   dynoChart.update('none');
 }
